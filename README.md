@@ -1,17 +1,27 @@
-Custom PoolState Multicall
-===============
+# Custom multicall migrated to NEAR
 
-**Note:** Experimental work-in-progress
+See parent repo for general info.
 
-Based off of ricmoos Account Scanner: https://github.com/ricmoo/account-scanner
+## Development
 
-A custom multicall contract to retrieve pool information for Balancer SOR. Aiming to improve execution speed for large amounts of calls.
+### Betanet
 
-## Results
+Deploy custom multicall contract to NEAR betanet:
 
-For 1000 test pools comparing [Multicall contract](https://github.com/makerdao/multicall) vs custom mulitcall (See compare.ts):
+```
+env NEAR_MASTER_ACCOUNT=[NEAR_ACCOUNT_ID].betanet truffle migrate --network near_betanet
+```
 
-| Method | Time | Time | Time | Time |
-| ----------- | ----------- | ----------- |  ----------- | ----------- |
-| Multicall | 12338.828ms | 9077.579ms | 10057.046ms | 13939.428ms |
-| Custom | 3319.800ms | 3025.077ms | 3186.130ms | 3336.242ms |
+### Localnet
+
+Make sure `masterAccountId` and `evmAccountId` are set correctly in the `NearProvider` for the `near_local` configuration.
+
+Run truffle migrations:
+
+```
+truffle migrate --network near_local
+```
+
+Store the contract address somewhere.
+
+If you get an account/key error uncomment the `keyStore` section in `NearProvider` for `near_local` and paster your master account secret key.

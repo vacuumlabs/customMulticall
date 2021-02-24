@@ -2,8 +2,6 @@ pragma solidity 0.5.12;
 
 pragma experimental ABIEncoderV2;
 
-// import "@nomiclabs/buidler/console.sol";
-
 contract PoolState {
 
     // Calls addr with data which returns (uint256)

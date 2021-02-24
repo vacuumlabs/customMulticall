@@ -1,4 +1,10 @@
 const { expect } = require("chai");
+const { ethers } = require('ethers')
+
+const Factory = artifacts.require("BFactory");
+const PoolState = artifacts.require("PoolState");
+const TToken = artifacts.require("TToken");
+const BPool = artifacts.require("BPool");
 
 describe("PoolState", function() {
   let factory;
@@ -13,23 +19,18 @@ describe("PoolState", function() {
   let MAX = ethers.constants.MaxUint256;
   let poolAddr;
 
+  this.timeout(0)
+
   before(async () => {
-      const accounts = await ethers.getSigners();
-      admin = await accounts[0].getAddress();
+      const accounts = await web3.eth.getAccounts()
+      admin = accounts[0]
       console.log(admin)
+      
+      factory = await Factory.new();
+      poolState = await PoolState.new();
 
-      const Factory = await ethers.getContractFactory("BFactory");
-      factory = await Factory.deploy();
-      await factory.deployed();
-
-      const PoolState = await ethers.getContractFactory("PoolState");
-      poolState = await PoolState.deploy();
-
-      const TToken = await ethers.getContractFactory("TToken");
-      weth = await TToken.deploy('Wrapped Ether', 'WETH', 18);
-      dai = await TToken.deploy('Dai Stablecoin', 'DAI', 18);
-
-      await dai.deployed();
+      weth = await TToken.new('Wrapped Ether', 'WETH', 18);
+      dai = await TToken.new('Dai Stablecoin', 'DAI', 18);
 
       WETH = weth.address;
       DAI = dai.address;
@@ -39,18 +40,15 @@ describe("PoolState", function() {
       await dai.mint(admin, ethers.utils.parseEther('200'));
 
       POOL = await factory.newBPool();
-      POOL = await POOL.wait();
       // find pool addr
-      POOL.events.forEach(event => {
-        if(event.event === 'LOG_NEW_POOL'){
-          poolAddr = event.args[1];
-          console.log(event.args[1])
+      POOL.logs.forEach(log => {
+        if(log.event === 'LOG_NEW_POOL'){
+          poolAddr = log.args[1];
+          console.log(log.args[1])
         }
       })
 
-      const BPool = await ethers.getContractFactory("BPool");
-      pool = BPool.attach(poolAddr);
-      pool.connect(accounts[0])
+      pool = await BPool.at(poolAddr);
 
       await weth.approve(poolAddr, MAX);
       await dai.approve(poolAddr, MAX);
@@ -66,7 +64,7 @@ describe("PoolState", function() {
       const daiBal = await pool.getBalance(DAI);
       expect(wethBal.toString()).to.equal(ethers.utils.parseEther('50').toString());
       expect(daiBal.toString()).to.equal(ethers.utils.parseEther('60').toString());
-      expect(swapFee).to.equal(1000000000000);
+      expect(swapFee.toString()).to.equal('1000000000000');
   });
 
   it("Should output correct addresses", async function() {
@@ -99,11 +97,15 @@ describe("PoolState", function() {
       })
     })
 
+    console.log({ addresses })
+
     let onChainInfo = await poolState.getPoolInfo(addresses, total);
+
+    console.log({onChainInfo})
 
     expect(onChainInfo.length).to.equal(2);
     expect(total).to.equal(2);
-    expect(onChainInfo[0]).to.equal(ethers.utils.parseEther('50').toString()); // token balance
-    expect(onChainInfo[1]).to.equal(ethers.utils.parseEther('60').toString()); // token balance
+    expect(onChainInfo[0].toString()).to.equal(ethers.utils.parseEther('50').toString()); // token balance
+    expect(onChainInfo[1].toString()).to.equal(ethers.utils.parseEther('60').toString()); // token balance
   });
 });
